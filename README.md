@@ -4,7 +4,8 @@ The layout of the `rtems` directory under `gdb/python` (in `rtems-tools`) would 
 
 This is the current idea I have, along with the structure of RTEMS pretty-printers which we can host. 
 
-1. Base Pretty-Printer Class
+**1. Base Pretty-Printer Class**
+
 Create a base class that defines common methods and attributes for all pretty-printers. This class will act as an interface or template for specific structure pretty-printers. This can be defined in `base_printer.py` within `rtems`. 
 ```py
 class BasePrettyPrinter:
@@ -20,7 +21,8 @@ class BasePrettyPrinter:
 
 (I am yet to figure out the specifics of utilising the advantages of Inheritance in Python and use it to extend a single, commonly used API (such as `_Objects_Information`) across multiple classes. For now I've made it just so that the `to_string()` is defined by force). 
 
-2. Derived Pretty-Printer Classes for Specific Structures
+**2. Derived Pretty-Printer Classes for Specific Structures**
+
 Each specific structure can have its own class that inherits from BasePrettyPrinter. These classes will implement the to_string method to provide the custom string representation for the specific structure.
 
 Example:
@@ -48,7 +50,10 @@ def to_string(self):
                 ...
 ```
 
-3. Printer Registration Mechanism
+**3. Printer Registration Mechanism**
+
+(This is one of the steps whose specifics I am to finalise on. There might be better approaches than the one I have taken here. I did not refer to the `libstdcxx` approach when writing these functions, so my next step would be to look at their approach to registering so many printers at once and see if I can borrow anything from there).
+
 Create a function to register all the pretty-printers. This function will be called from the pprinter.py file. It can use a dictionary or a list to map structure names to their corresponding pretty-printer classes.
 
 ```py
@@ -68,7 +73,8 @@ pretty_printers = {
 }
 ```
 
-4. Directory Structure
+**4. Directory Structure**
+
 Organize the pretty-printers in a directory structure that mirrors the nature of the solution:
 ```
 rtems/
@@ -85,7 +91,10 @@ rtems/
 - `base_printer.py`: Contains the `BasePrettyPrinter` class
 - `printers`: Contains individual modules for each structure's pretty-printer 
 
-5. Inheritance and Reusability
+**5. Inheritance and Reusability**
+
+(This is also one of the steps whose specifics I am to figure out. If I am able to nicely get one example of, say, `_Objects_Information`'s methods being used elsewhere, I think this will be feeling more complete. Without that, the inheritance part looks unnecessary). 
+
 For structures with common elements, create intermediate classes that encapsulate shared logic. For example:
 
 ```py
@@ -99,7 +108,8 @@ class ChainControlPrinter(ControlBlockPrinter):
         return f"ChainControl({common_info}, other_field={self.val['other_field']})"
 ```
 
-6. Dynamic Import of Pretty-Printers
+**6. Dynamic Import of Pretty-Printers**
+
 To make the solution more flexible, we can dynamically load pretty-printers from the `printers/` directory. This way, adding a new pretty-printer involves simply dropping a new Python file in the `printers/` directory.
 
 ```py
@@ -109,13 +119,15 @@ import importlib
 def load_printers():
     for file in os.listdir(os.path.join(os.path.dirname(__file__), 'printers')):
         if file.endswith(".py") and file != "__init__.py":
-            module_name = f"rtems.printers.{file[:-3]}"
+            file = file.replace(".py", "")
+            module_name = f"rtems.printers.{file}"
             importlib.import_module(module_name)
 
 load_printers()
 ```
 
-7. Actual usage 
+**7. Actual usage** 
+
 In the `pprinter.py` script, all we would need to do is simply import and register the RTEMS pretty-printers. 
 
 ```py
@@ -125,7 +137,8 @@ from .base_printer import register_rtems_printers
 register_rtems_printers(None)
 ```
 
-8. For users to add their own printers 
+**8. For users to add their own printers** 
+
 a. Create a new Python file in the `printers/` directory 
 b. Define a class that inherits from the `BasePrettyPrinter` class 
 c. Implement the `to_string` method (along with any others they would like) 
@@ -133,5 +146,6 @@ d. Add the structure name and the class name to the `pretty_printers` dictionary
 
 
 **Some notes**: 
+
 1. I am still figuring out the specifics when it comes to importing between these various files/packages
 2. There might be a more efficient way to register these various pretty-printers. I plan on taking a look at the `libstdcxx` approach to see if there's any elements I can borrow from that
