@@ -22,7 +22,6 @@ import traceback
 import gdb
 import os
 
-
 gdb_path = gdb.PYTHONDIR
 gcc_version = "13.3.0"
 
