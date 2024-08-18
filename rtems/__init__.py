@@ -28,7 +28,7 @@
 #
 
 import gdb
-import rtems
+#import rtems
 
 def get_architure():
     frame = gdb.selected_frame()
